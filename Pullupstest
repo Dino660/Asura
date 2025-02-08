@@ -41,6 +41,7 @@ autoPullUpsButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 -- Variable de control
 local autoPullUps = false
 local validKeys = { W = Enum.KeyCode.W, A = Enum.KeyCode.A, S = Enum.KeyCode.S, D = Enum.KeyCode.D }
+local virtualInput = game:GetService("VirtualInputManager")
 
 -- Función para obtener `Keys`
 local function checkFrame2Keys()
@@ -48,14 +49,13 @@ local function checkFrame2Keys()
     if pullupGui then
         local frame2 = pullupGui:FindFirstChild("Frame2")
         if frame2 then
-            local keysFrame = frame2:FindFirstChild("Keys")
-            return keysFrame
+            return frame2:FindFirstChild("Keys")
         end
     end
     return nil
 end
 
--- Función para detectar y presionar la tecla
+-- Función para detectar y presionar la tecla rápidamente
 local function pressKeyFromFrame()
     local keysFrame = checkFrame2Keys()
     
@@ -63,8 +63,10 @@ local function pressKeyFromFrame()
         for _, child in pairs(keysFrame:GetChildren()) do
             if validKeys[child.Name] then -- Si el nombre del objeto es W, A, S o D
                 print("[✅] Presionando tecla: " .. child.Name)
-                game:GetService("VirtualInputManager"):SendKeyEvent(true, validKeys[child.Name], false, game)
-                task.wait(0.1)
+                virtualInput:SendKeyEvent(true, validKeys[child.Name], false, game) -- Presionar
+                task.wait(0.05) -- Esperar un poco para simular un toque rápido
+                virtualInput:SendKeyEvent(false, validKeys[child.Name], false, game) -- Soltar la tecla
+                task.wait(0.05) -- Esperar antes de presionar otra tecla
             end
         end
     end
