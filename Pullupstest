@@ -11,11 +11,28 @@ frame.Parent = gui
 frame.Active = true
 frame.Draggable = true -- Permite mover la interfaz
 
--- Texto "Ohma Edless Dx" con colores
+-- Botón para minimizar
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -35, 0, 5)
+minimizeButton.Text = "–"
+minimizeButton.Parent = frame
+minimizeButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+
+-- Botón para restaurar
+local restoreButton = Instance.new("TextButton")
+restoreButton.Size = UDim2.new(0, 50, 0, 30)
+restoreButton.Position = UDim2.new(0, 5, 0, 5)
+restoreButton.Text = "+"
+restoreButton.Parent = gui
+restoreButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+restoreButton.Visible = false
+
+-- Texto "MACRO AUTO PULL UP" con colores
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Position = UDim2.new(0, 0, 0, 5)
-title.Text = "Ohma Edless Dx"
+title.Text = "MACRO AUTO PULL UP"
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(math.random(100,255), math.random(100,255), math.random(100,255))
@@ -38,10 +55,24 @@ autoPullUpsButton.Text = "Auto Pull Ups: OFF"
 autoPullUpsButton.Parent = frame
 autoPullUpsButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 
--- Variable de control
+-- Botón Auto Eat
+local autoEatButton = Instance.new("TextButton")
+autoEatButton.Size = UDim2.new(0, 200, 0, 40)
+autoEatButton.Position = UDim2.new(0, 10, 0, 90)
+autoEatButton.Text = "Auto Eat: OFF"
+autoEatButton.Parent = frame
+autoEatButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+
+-- Variables de control
 local autoPullUps = false
+local autoEat = false
 local validKeys = { W = Enum.KeyCode.W, A = Enum.KeyCode.A, S = Enum.KeyCode.S, D = Enum.KeyCode.D }
 local virtualInput = game:GetService("VirtualInputManager")
+local firstKeyPressedTime = nil
+local isPaused = false
+local lastEatTime = 0
+local eatInterval = 15 * 60 -- 15 minutos en segundos
+local nextEatTime = tick() + eatInterval
 
 -- Función para obtener `Keys`
 local function checkFrame2Keys()
@@ -64,27 +95,96 @@ local function pressKeyFromFrame()
             if validKeys[child.Name] then -- Si el nombre del objeto es W, A, S o D
                 print("[✅] Presionando tecla: " .. child.Name)
                 virtualInput:SendKeyEvent(true, validKeys[child.Name], false, game) -- Presionar
-                task.wait(0.05) -- Esperar un poco para simular un toque rápido
+                task.wait(0.01) -- Tiempo reducido de espera
                 virtualInput:SendKeyEvent(false, validKeys[child.Name], false, game) -- Soltar la tecla
-                task.wait(0.05) -- Esperar antes de presionar otra tecla
+                task.wait(0.01) -- Tiempo reducido de espera antes de presionar otra tecla
+                
+                -- Registrar el primer momento en que se presiona una tecla válida
+                if not firstKeyPressedTime then
+                    firstKeyPressedTime = tick()
+                end
             end
         end
     end
 end
 
--- Loop automático
+-- Loop automático para Pull Ups
 local function autoPressKeys()
     while autoPullUps do
-        pressKeyFromFrame()
+        -- Comprobar si han pasado 59 segundos desde la primera tecla presionada
+        if firstKeyPressedTime and tick() - firstKeyPressedTime >= 59 then
+            if not isPaused then
+                print("[⚠️] Pausando por 5 segundos.")
+                isPaused = true
+                task.wait(5)  -- Pausa de 5 segundos
+                print("[✅] Reanudando.")
+                isPaused = false
+                firstKeyPressedTime = nil  -- Restablecer el temporizador
+            end
+        end
+        
+        if not isPaused then
+            pressKeyFromFrame()
+        end
         task.wait(0.1)
     end
 end
 
--- Evento del botón
+-- Función para comer
+local function autoEatFood()
+    while autoEat do
+        if tick() >= nextEatTime then
+            print("[✅] Comiendo...")
+            local foodTools = {
+                player.Backpack:FindFirstChild("Chicken"),
+                player.Backpack:FindFirstChild("Cheeseburger"),
+                player.Backpack:FindFirstChild("Milkshake"),
+                player.Backpack:FindFirstChild("Protein Shake"),
+                player.Backpack:FindFirstChild("Sushi")
+            }
+            
+            for _, food in pairs(foodTools) do
+                if food and food:IsA("Tool") then
+                    food.Parent = player.Character
+                    food:Activate()
+                    print("[✅] Comida consumida: " .. food.Name)
+                    task.wait(1) -- Espera antes de dejar de usar la comida
+                    food.Parent = player.Backpack
+                    break
+                end
+            end
+            nextEatTime = tick() + eatInterval -- Resetear el tiempo de espera para la próxima comida
+        end
+        task.wait(1)
+    end
+end
+
+-- Evento del botón Auto Pull Ups
 autoPullUpsButton.MouseButton1Click:Connect(function()
     autoPullUps = not autoPullUps
     autoPullUpsButton.Text = "Auto Pull Ups: " .. (autoPullUps and "ON" or "OFF")
     if autoPullUps then
         autoPressKeys()
     end
+end)
+
+-- Evento del botón Auto Eat
+autoEatButton.MouseButton1Click:Connect(function()
+    autoEat = not autoEat
+    autoEatButton.Text = "Auto Eat: " .. (autoEat and "ON" or "OFF")
+    if autoEat then
+        autoEatFood()
+    end
+end)
+
+-- Función para minimizar
+minimizeButton.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    restoreButton.Visible = true
+end)
+
+-- Función para restaurar
+restoreButton.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    restoreButton.Visible = false
 end)
