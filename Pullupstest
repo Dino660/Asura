@@ -109,7 +109,7 @@ local function autoEat()
             player.Character.Humanoid:EquipTool(tool)
             task.wait(0.5) -- Pequeña pausa para equipar la comida
             tool:Activate()  -- Se activa la comida
-            task.wait(3) -- Espera 3 segundos después de comer
+            task.wait(2) -- Espera 3 segundos después de comer
             player.Character.Humanoid:UnequipTools() -- Quita la comida equipada
             break  -- Sale del ciclo una vez que ha comido una comida
         end
