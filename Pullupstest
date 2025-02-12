@@ -2,7 +2,70 @@ local player = game:GetService("Players").LocalPlayer
 local backpack = player.Backpack
 local comidas = {"Chicken", "Cheeseburger", "Milkshake", "Protein Shake", "Sushi"}
 
-while true do
+-- Variables para controlar AutoPullUps
+local autoPullUps = false
+local validKeys = { W = Enum.KeyCode.W, A = Enum.KeyCode.A, S = Enum.KeyCode.S, D = Enum.KeyCode.D }
+local virtualInput = game:GetService("VirtualInputManager")
+local firstKeyPressedTime = nil
+local isPaused = false
+
+-- Función para obtener `Keys`
+local function checkFrame2Keys()
+    local pullupGui = player.PlayerGui:FindFirstChild("PullupGain")
+    if pullupGui then
+        local frame2 = pullupGui:FindFirstChild("Frame2")
+        if frame2 then
+            return frame2:FindFirstChild("Keys")
+        end
+    end
+    return nil
+end
+
+-- Función para detectar y presionar la tecla rápidamente
+local function pressKeyFromFrame()
+    local keysFrame = checkFrame2Keys()
+    
+    if keysFrame then
+        for _, child in pairs(keysFrame:GetChildren()) do
+            if validKeys[child.Name] then
+                print("[✅] Presionando tecla: " .. child.Name)
+                virtualInput:SendKeyEvent(true, validKeys[child.Name], false, game) -- Presionar
+                task.wait(0.01) -- Tiempo reducido de espera
+                virtualInput:SendKeyEvent(false, validKeys[child.Name], false, game) -- Soltar la tecla
+                task.wait(0.01) -- Tiempo reducido de espera antes de presionar otra tecla
+                
+                if not firstKeyPressedTime then
+                    firstKeyPressedTime = tick()
+                end
+            end
+        end
+    end
+end
+
+-- Función para auto presionar teclas
+local function autoPressKeys()
+    while autoPullUps do
+        if firstKeyPressedTime and tick() - firstKeyPressedTime >= 60 then  -- Cada 60 segundos
+            if not isPaused then
+                print("[⚠️] Pausando por 5 segundos.")
+                isPaused = true
+                autoFood = true  -- Activa el autofood cuando la pausa inicia
+                task.wait(5)  -- Pausa de 5 segundos
+                print("[✅] Reanudando.")
+                isPaused = false
+                firstKeyPressedTime = nil  -- Restablecer el temporizador
+            end
+        end
+        
+        if not isPaused then
+            pressKeyFromFrame()
+        end
+        task.wait(0.1)
+    end
+end
+
+-- Función para comer
+local function eatFood()
     for _, comida in ipairs(comidas) do
         local tool = backpack:FindFirstChild(comida)
         if tool then
@@ -14,5 +77,99 @@ while true do
             break  -- Sale del ciclo una vez que ha comido una comida
         end
     end
-    task.wait(5) -- Espera 5 segundos antes de volver a intentar
 end
+
+-- Función para activar el autoeat
+local function autoEat()
+    while true do
+        if autoFood then
+            print("[⚠️] Comiendo...")
+            eatFood()  -- Llama a la función para comer
+            autoFood = false  -- Desactiva el auto comer después de la comida
+        end
+        task.wait(1)
+    end
+end
+
+-- Interfaz de usuario
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:FindFirstChild("PlayerGui")
+
+-- Crear interfaz
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 140)
+frame.Position = UDim2.new(0.4, 0, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true -- Permite mover la interfaz
+
+-- Botón para minimizar
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -35, 0, 5)
+minimizeButton.Text = "–"
+minimizeButton.Parent = frame
+minimizeButton.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+
+-- Botón para restaurar
+local restoreButton = Instance.new("TextButton")
+restoreButton.Size = UDim2.new(0, 50, 0, 30)
+restoreButton.Position = UDim2.new(0, 5, 0, 5)
+restoreButton.Text = "+"
+restoreButton.Parent = gui
+restoreButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+restoreButton.Visible = false
+
+-- Texto "MACRO AUTO PULL UP" con colores
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.Text = "MACRO AUTO PULL UP"
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(math.random(100,255), math.random(100,255), math.random(100,255))
+title.BackgroundTransparency = 1
+title.Parent = frame
+
+-- Efecto de cambio de color
+task.spawn(function()
+    while true do
+        title.TextColor3 = Color3.fromRGB(math.random(100,255), math.random(100,255), math.random(100,255))
+        task.wait(0.5)
+    end
+end)
+
+-- Botón Auto Pull Ups Keys
+local autoPullUpsButton = Instance.new("TextButton")
+autoPullUpsButton.Size = UDim2.new(0, 200, 0, 40)
+autoPullUpsButton.Position = UDim2.new(0, 10, 0, 40)
+autoPullUpsButton.Text = "Auto Pull Ups: OFF"
+autoPullUpsButton.Parent = frame
+autoPullUpsButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+
+-- Evento del botón Auto Pull Ups
+autoPullUpsButton.MouseButton1Click:Connect(function()
+    autoPullUps = not autoPullUps
+    autoPullUpsButton.Text = "Auto Pull Ups: " .. (autoPullUps and "ON" or "OFF")
+    if autoPullUps then
+        autoPressKeys()  -- Inicia el ciclo de Auto Press Keys
+    end
+end)
+
+-- Función para minimizar
+minimizeButton.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    restoreButton.Visible = true
+end)
+
+-- Función para restaurar
+restoreButton.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    restoreButton.Visible = false
+end)
+
+-- Iniciar la función de auto comer en segundo plano
+task.spawn(function()
+    autoEat()
+end)
