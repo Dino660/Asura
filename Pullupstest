@@ -1,1 +1,18 @@
+local player = game:GetService("Players").LocalPlayer
+local backpack = player.Backpack
+local comidas = {"Chicken", "Cheeseburger", "Milkshake", "Protein Shake", "Sushi"}
 
+while true do
+    for _, comida in ipairs(comidas) do
+        local tool = backpack:FindFirstChild(comida)
+        if tool then
+            player.Character.Humanoid:EquipTool(tool)
+            task.wait(0.5) -- Pequeña pausa para equipar la comida
+            tool:Activate()  -- Se activa la comida
+            task.wait(3) -- Espera 3 segundos después de comer
+            player.Character.Humanoid:UnequipTools() -- Quita la comida equipada
+            break  -- Sale del ciclo una vez que ha comido una comida
+        end
+    end
+    task.wait(5) -- Espera 5 segundos antes de volver a intentar
+end
