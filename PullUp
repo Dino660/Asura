@@ -130,9 +130,9 @@ local function autoPressKeys()
                 isPaused = false
                 firstKeyPressedTime = nil  -- Restablecer el temporizador
 
-                -- Cuando el conteo de pausas llega a 15, activar la comida
-                if pauseCount == 1 then
-                    print("[⚡] Pausa 15 alcanzada, activando comida...")
+                -- Cuando el conteo de pausas llega a 14, activar la comida
+                if pauseCount == 14 then
+                    print("[⚡] Pausa 14 alcanzada, activando comida...")
                     autoEat()
                     pauseCount = 0 -- Reiniciar el conteo
                 end
