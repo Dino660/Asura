@@ -101,7 +101,7 @@ end
 local function autoEat()
     local player = game:GetService("Players").LocalPlayer
     local backpack = player.Backpack
-    local comidas = {"Chicken", "Cheeseburger", "Milkshake", "Protein Shake", "Sushi", "Protein Drain"}
+    local comidas = {"Chicken", "Cheeseburger", "Ramen", "Milkshake", "Protein Shake", "Sushi", "Protein Drain"}
 
     for _, comida in ipairs(comidas) do
         local tool = backpack:FindFirstChild(comida)
